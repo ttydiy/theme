@@ -1,0 +1,27 @@
+{
+  "name": "@ttydiy/theme",
+  "version": "0.1.0",
+  "description": "Headless, framework-agnostic theme state: the choice in a cookie, the resolved theme on <html>.",
+  "keywords": [
+    "theme",
+    "dark-mode",
+    "color-scheme",
+    "ssr",
+    "headless"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ttydiy/theme.git",
+    "directory": "packages/theme"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "exports": "./dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}
