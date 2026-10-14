@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "strictNullChecks": true,
+    "types": ["node"],
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "noEmit": true,
+    "paths": {
+      "@ttydiy/theme": ["./packages/theme/src/index.ts"],
+      "@ttydiy/react-theme": ["./packages/react-theme/src/index.ts"]
+    }
+  },
+  "include": ["test-setup.ts", "packages/*/src", "packages/*/tests"]
+}
