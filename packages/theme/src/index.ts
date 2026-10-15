@@ -113,3 +113,18 @@ export function createTheme({
     dehydrate: (cookies) => ({ [cookie]: parse(cookies) }),
   }
 }
+
+/** Inline first in `<head>`. Applies the saved choice to `<html>` before the first paint, and follows the OS while it's `'system'`. */
+export function themeScript({
+  options: { themes, attribute, cookie },
+}: Pick<Theme<string>, 'options'>): string {
+  const config = JSON.stringify([themes, attribute, cookie]).replace(
+    /</g,
+    '\\u003c',
+  )
+  const write =
+    attribute === 'class'
+      ? 'd.classList.remove(...t),d.classList.add(v)'
+      : 'd.setAttribute(a,v)'
+  return `try{let[t,a,c]=${config},d=document.documentElement,m=matchMedia('(prefers-color-scheme: dark)'),f=()=>{let v=m.matches?'dark':'light';for(let p of document.cookie.split(';')){let[n,x]=p.trim().split('=');if(n==c){t.includes(x)&&(v=x);break}}${write};d.style.colorScheme=v=='dark'||v=='light'?v:''};f();m.onchange=f}catch{}`
+}
