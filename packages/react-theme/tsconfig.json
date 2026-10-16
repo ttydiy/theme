@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "types": [],
+    "declaration": true,
+    "isolatedDeclarations": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    // Build against @ttydiy/theme's published types, not its source.
+    "paths": {}
+  },
+  "include": ["src"]
+}
