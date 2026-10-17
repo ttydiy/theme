@@ -1,0 +1,23 @@
+@import 'tailwindcss';
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+:root {
+  background: #fff;
+  color: #0a0a0a;
+}
+[data-theme='dark'] {
+  background: #0a0a0a;
+  color: #fafafa;
+}
+body {
+  margin: 0;
+}
