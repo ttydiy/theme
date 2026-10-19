@@ -64,7 +64,7 @@ colorTheme.subscribe((theme) => {})
 
 ## React
 
-Import everything from `@ttydiy/react-theme`.
+Import everything from `@ttydiy/react-theme`. The guides below use `colorTheme` from [Setup](#setup).
 
 ```tsx
 import { useTheme } from '@ttydiy/react-theme'
@@ -74,6 +74,116 @@ function ThemeToggle() {
   return <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>{theme}</button>
 }
 ```
+
+### Next.js
+
+1. In `app/layout.tsx`, add the script to `<head>` and `suppressHydrationWarning` to `<html>`:
+
+   ```tsx
+   import { themeScript } from '@ttydiy/react-theme'
+   import { colorTheme } from './theme'
+
+   export default function RootLayout({ children }: LayoutProps<'/'>) {
+     return (
+       <html lang="en" suppressHydrationWarning>
+         <head>
+           <script>{themeScript(colorTheme)}</script>
+         </head>
+         <body>{children}</body>
+       </html>
+     )
+   }
+   ```
+
+2. Call `useTheme` in a client component (`'use client'`).
+
+[Example](examples/nextjs), with shadcn/ui.
+
+### TanStack Start
+
+1. In `src/routes/__root.tsx`, add the script to the shell's `<head>` and `suppressHydrationWarning` to `<html>`:
+
+   ```tsx
+   import { ScriptOnce } from '@tanstack/react-router'
+   import { themeScript } from '@ttydiy/react-theme'
+   import { colorTheme } from '../theme'
+
+   function RootDocument({ children }: { children: React.ReactNode }) {
+     return (
+       <html lang="en" suppressHydrationWarning>
+         <head>
+           <ScriptOnce>{themeScript(colorTheme)}</ScriptOnce>
+           <HeadContent />
+         </head>
+         <body>
+           {children}
+           <Scripts />
+         </body>
+       </html>
+     )
+   }
+   ```
+
+2. For routes with `ssr: true`, hydrate the request's choice, so server-rendered components show it from the first render:
+
+   ```tsx
+   import { createServerFn } from '@tanstack/react-start'
+   import { getRequestHeader } from '@tanstack/react-start/server'
+   import { ThemeHydrationBoundary } from '@ttydiy/react-theme'
+
+   const getThemeState = createServerFn().handler(() =>
+     colorTheme.dehydrate(getRequestHeader('cookie')),
+   )
+
+   export const Route = createRootRoute({
+     loader: () => getThemeState(),
+     shellComponent: RootDocument,
+   })
+
+   // in RootDocument's <body>:
+   <ThemeHydrationBoundary state={Route.useLoaderData()}>{children}</ThemeHydrationBoundary>
+   ```
+
+3. Call `useTheme` in any component.
+
+[Example](examples/tanstack-start)
+
+### Vite
+
+1. In `vite.config.ts`, inline the script into `index.html`:
+
+   ```ts
+   import { themeScript } from '@ttydiy/react-theme'
+   import { colorTheme } from './src/theme.ts'
+
+   export default defineConfig({
+     plugins: [
+       react(),
+       {
+         name: 'theme-script',
+         transformIndexHtml: () => [
+           { tag: 'script', children: themeScript(colorTheme), injectTo: 'head-prepend' },
+         ],
+       },
+     ],
+   })
+   ```
+
+2. Call `useTheme` in any component. No `suppressHydrationWarning` needed: nothing is hydrated.
+
+[Example](examples/react)
+
+### Rendering modes
+
+The script is needed in every mode. Only server-rendered components need the boundary.
+
+| Mode | Script | `suppressHydrationWarning` | `ThemeHydrationBoundary` |
+|---|---|---|---|
+| Server-rendered (Next.js, Start `ssr: true`) | ✓ | ✓ | Optional: without it, `useTheme` shows `'system'` for one frame |
+| Client-rendered in a server shell (Start `ssr: false` or `'data-only'`, Next.js `dynamic(…, { ssr: false })`) | ✓ | ✓ | Not needed |
+| Single-page app (Vite) | ✓ | Not needed | Not needed |
+
+Use the boundary only on pages rendered per request. Its state is part of the HTML, so a page cached for everyone would show one visitor's choice to others until hydration. Colors are unaffected either way: the script reads the visitor's own cookie.
 
 ## Styling
 
