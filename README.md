@@ -211,7 +211,7 @@ Tailwind's `dark:` variant:
 | `themes` | `['light', 'dark']` | Themes besides `'system'` |
 | `attribute` | `'data-theme'` | Attribute on `<html>`, or `'class'` |
 | `cookie` | `'theme'` | Cookie name |
-| `cookieAttributes` | `'path=/;max-age=31536000;samesite=lax'` | Add `;domain=.example.com` to share across subdomains |
+| `cookieAttributes` | `'path=/;max-age=31536000;samesite=lax'` | Replaces the default. To share across subdomains: `'path=/;domain=.example.com;max-age=31536000;samesite=lax'` |
 
 | Returns | |
 |---|---|

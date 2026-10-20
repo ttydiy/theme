@@ -5,7 +5,7 @@ export interface ThemeOptions<TTheme extends string> {
   attribute?: 'class' | `data-${string}`
   /** Cookie name. Defaults to `'theme'`. */
   cookie?: string
-  /** Defaults to `'path=/;max-age=31536000;samesite=lax'`. Add `;domain=.example.com` to share across subdomains. */
+  /** Defaults to `'path=/;max-age=31536000;samesite=lax'`. To share across subdomains: `'path=/;domain=.example.com;max-age=31536000;samesite=lax'`. */
   cookieAttributes?: string
 }
 
