@@ -12,6 +12,7 @@ Headless, framework-agnostic theme state.
 - **Framework-agnostic store.** `get`, `set` and `subscribe`, the contract `useSyncExternalStore` expects. Adapters are thin bindings.
 - **Hydration-safe.** The server dehydrates the request's choice, and `ThemeHydrationBoundary` hydrates it, so server and client render the same value.
 - **Cross-tab sync.** Through the `cookieStore` change event, or when a tab is shown again where it's unsupported.
+- **Platform.** Browsers only: it needs the DOM and cookies, so React Native and other native renderers aren't supported. Desktop web views (Electron, Tauri) are untested. On the server, `parse` and `dehydrate` work in any JavaScript runtime.
 
 ```
  set('dark') ──► cookie ──► server, on every request
