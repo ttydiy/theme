@@ -11,7 +11,8 @@
     "test": "npm run build && npm run test:types && npm run test:lib && npm run test:build",
     "test:types": "tsc -p tsconfig.json",
     "test:lib": "node --import ./test-setup.ts --test 'packages/*/tests/*.test.ts'",
-    "test:build": "publint --strict packages/theme && publint --strict packages/react-theme"
+    "test:build": "publint --strict packages/theme && publint --strict packages/react-theme",
+    "release": "npm test && npm publish -w packages/theme && npm publish -w packages/react-theme"
   },
   "devDependencies": {
     "@happy-dom/global-registrator": "^21.0.4",
