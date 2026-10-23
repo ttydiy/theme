@@ -6,9 +6,16 @@
     "theme",
     "dark-mode",
     "color-scheme",
+    "prefers-color-scheme",
+    "headless",
+    "framework-agnostic",
     "ssr",
-    "headless"
+    "cookie",
+    "no-flash",
+    "fouc"
   ],
+  "homepage": "https://github.com/ttydiy/theme#readme",
+  "bugs": "https://github.com/ttydiy/theme/issues",
   "license": "MIT",
   "repository": {
     "type": "git",

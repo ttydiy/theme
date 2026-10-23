@@ -7,8 +7,15 @@
     "theme",
     "dark-mode",
     "color-scheme",
-    "ssr"
+    "ssr",
+    "nextjs",
+    "tanstack-start",
+    "next-themes",
+    "no-flash",
+    "fouc"
   ],
+  "homepage": "https://github.com/ttydiy/theme#readme",
+  "bugs": "https://github.com/ttydiy/theme/issues",
   "license": "MIT",
   "repository": {
     "type": "git",
