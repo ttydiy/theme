@@ -8,7 +8,7 @@ Headless, framework-agnostic theme state.
 - **Cookie as the source of truth.** The user's choice, a theme or `'system'`, is stored in a cookie. The server reads it on every request, and all tabs share it.
 - **Pre-paint script, no FOUC.** A blocking inline script in `<head>` applies the choice to `<html>` before the browser paints, so there's no flash of the wrong theme.
 - **DOM as output.** `<html>` carries the resolved theme as an attribute or class, plus `color-scheme`. CSS reads it, and the library never reads it back as state.
-- **`'system'` resolved in the browser.** It resolves to `light` or `dark` from `prefers-color-scheme`, and follows OS changes live.
+- **`'system'` resolved in the browser.** It resolves to `light` or `dark` from `prefers-color-scheme`, and follows OS changes live. If the OS's theme isn't one of `themes`, it shows none, and your CSS default applies.
 - **Framework-agnostic store.** `get`, `set` and `subscribe`, the contract `useSyncExternalStore` expects. Adapters are thin bindings.
 - **Hydration-safe.** The server dehydrates the request's choice, and `ThemeHydrationBoundary` hydrates it, so server and client render the same value.
 - **Cross-tab sync.** Through the `cookieStore` change event, or when a tab is shown again where it's unsupported.
@@ -203,6 +203,28 @@ Tailwind's `dark:` variant:
 [data-theme='dark'] { color-scheme: dark; }
 ```
 
+## Independent themes
+
+Create one theme per setting, like color and contrast, each with its own attribute and cookie:
+
+```ts
+export const contrast = createTheme({
+  themes: ['more', 'less'],
+  attribute: 'data-contrast',
+  cookie: 'contrast',
+})
+```
+
+Inline each one's script, and spread their states into one boundary:
+
+```tsx
+<ThemeHydrationBoundary state={{ ...colorTheme.dehydrate(cookies), ...contrast.dehydrate(cookies) }}>
+```
+
+- Keep `light` and `dark` in one theme. Only that one sets `color-scheme`.
+- For other settings, `'system'` removes the attribute or class, so your CSS default applies.
+- Give each theme its own cookie and attribute. `attribute: 'class'` can be shared, as long as the theme names differ.
+
 ## API
 
 ### `createTheme(options?)`
@@ -220,7 +242,7 @@ Tailwind's `dark:` variant:
 | `set(theme)` | Takes a theme, `'system'` or an updater |
 | `subscribe(listener)` | Returns `unsubscribe`. Fires for other tabs too. |
 | `parse(cookieHeader)` | The choice, on the server |
-| `dehydrate(cookieHeader)` | State for `ThemeHydrationBoundary`. Spread several themes into one object. |
+| `dehydrate(cookieHeader)` | State for `ThemeHydrationBoundary`. Spread [independent themes](#independent-themes) into one object. |
 
 ### `themeScript(theme)`
 

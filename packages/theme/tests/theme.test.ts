@@ -20,11 +20,19 @@ const os = (scheme: 'light' | 'dark') => {
 afterEach(() => {
   os('light')
   root.removeAttribute('data-theme')
+  root.removeAttribute('data-contrast')
   root.removeAttribute('class')
   root.removeAttribute('style')
-  document.cookie = 'theme=;path=/;max-age=0'
-  document.cookie = 'mode=;path=/;max-age=0'
+  for (const name of ['theme', 'mode', 'contrast'])
+    document.cookie = `${name}=;path=/;max-age=0`
 })
+
+// A second setting beside the color theme.
+const contrastOptions = {
+  themes: ['more', 'less'],
+  attribute: 'data-contrast',
+  cookie: 'contrast',
+} as const
 
 // Shared by `parse` and `themeScript`, which must agree.
 const cookies = [
@@ -109,6 +117,37 @@ describe('get / set', () => {
     assert.equal(theme.parse(document.cookie), 'light')
     theme.set('system')
     root.removeAttribute('data-mode')
+  })
+
+  test("'system' shows no theme when the OS's isn't one of them", () => {
+    os('dark')
+    createTheme({ themes: ['light', 'sepia'] }).set('system')
+    assert.equal(root.hasAttribute('data-theme'), false)
+    assert.equal(root.style.colorScheme, '')
+  })
+
+  test('several themes stay independent', () => {
+    os('dark')
+    const color = createTheme()
+    const contrast = createTheme(contrastOptions)
+    color.set('system')
+    contrast.set('more')
+    assert.equal(root.getAttribute('data-theme'), 'dark')
+    assert.equal(root.getAttribute('data-contrast'), 'more')
+    assert.equal(root.style.colorScheme, 'dark')
+    contrast.set('system') // there's no OS contrast to follow
+    assert.equal(root.hasAttribute('data-contrast'), false)
+    assert.equal(root.style.colorScheme, 'dark')
+  })
+
+  test('several themes can share the class attribute', () => {
+    const color = createTheme({ attribute: 'class' })
+    const contrast = createTheme({ ...contrastOptions, attribute: 'class' })
+    color.set('dark')
+    contrast.set('more')
+    contrast.set('less')
+    color.set('light')
+    assert.equal(root.className, 'less light')
   })
 })
 
@@ -227,6 +266,9 @@ describe('themeScript', () => {
     ['class mode', { attribute: 'class' }, 'theme=dark'],
     ['custom themes', { themes: ['light', 'sepia'] }, 'theme=sepia'],
     ['a custom cookie', { cookie: 'mode' }, 'mode=dark'],
+    ["'system' without the OS's theme", { themes: ['light', 'sepia'] }, ''],
+    ['another setting', contrastOptions, 'contrast=more'],
+    ["'system' for another setting", contrastOptions, ''],
   ] as const satisfies ReadonlyArray<
     readonly [string, ThemeOptions<string>, string]
   >) {

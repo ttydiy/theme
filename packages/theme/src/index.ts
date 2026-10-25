@@ -11,7 +11,7 @@ export interface ThemeOptions<TTheme extends string> {
 
 export interface Theme<TTheme extends string> {
   readonly options: Required<ThemeOptions<TTheme>>
-  /** The user's choice. `<html>` shows it resolved: `'system'` becomes the OS's `'light'` or `'dark'`. */
+  /** The user's choice. `<html>` shows it resolved: `'system'` becomes the OS's `'light'` or `'dark'`, or none if that isn't one of `themes`. */
   get: () => TTheme | 'system'
   /** Saves the choice to the cookie and shows it, resolved, on `<html>`. */
   set: (
@@ -44,19 +44,25 @@ export function createTheme({
     return 'system'
   }
 
-  // `systemTheme` and `apply` are mirrored by `themeScript`; the tests keep them in sync.
-  const systemTheme = () =>
-    matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  // The OS's theme, if it's one of `themes`. It and `apply` are mirrored by `themeScript`; the tests keep them in sync.
+  const systemTheme = () => {
+    const theme = matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light'
+    return themes.includes(theme) ? theme : undefined
+  }
 
   const apply = (theme: string) => {
     const root = document.documentElement
     const resolved = theme === 'system' ? systemTheme() : theme
     if (attribute === 'class') {
       root.classList.remove(...themes)
-      root.classList.add(resolved)
-    } else root.setAttribute(attribute, resolved)
-    root.style.colorScheme =
-      resolved === 'dark' || resolved === 'light' ? resolved : ''
+      if (resolved) root.classList.add(resolved)
+    } else if (resolved) root.setAttribute(attribute, resolved)
+    else root.removeAttribute(attribute)
+    if (setsColorScheme(themes))
+      root.style.colorScheme =
+        resolved === 'dark' || resolved === 'light' ? resolved : ''
   }
 
   const listeners = new Set<(theme: string) => void>()
@@ -129,7 +135,14 @@ export function themeScript({
   )
   const write =
     attribute === 'class'
-      ? 'd.classList.remove(...t),d.classList.add(v)'
-      : 'd.setAttribute(a,v)'
-  return `try{let[t,a,c]=${config},d=document.documentElement,m=matchMedia('(prefers-color-scheme: dark)'),f=()=>{let v=m.matches?'dark':'light';for(let p of document.cookie.split(';')){let[n,x]=p.trim().split('=');if(n==c){t.includes(x)&&(v=x);break}}${write};d.style.colorScheme=v=='dark'||v=='light'?v:''};f();m.onchange=f}catch{}`
+      ? 'd.classList.remove(...t),v&&d.classList.add(v)'
+      : 'v?d.setAttribute(a,v):d.removeAttribute(a)'
+  const colorScheme = setsColorScheme(themes)
+    ? ";d.style.colorScheme=v=='dark'||v=='light'?v:''"
+    : ''
+  return `try{let[t,a,c]=${config},d=document.documentElement,m=matchMedia('(prefers-color-scheme: dark)'),f=()=>{let s=m.matches?'dark':'light',v=t.includes(s)?s:'';for(let p of document.cookie.split(';')){let[n,x]=p.trim().split('=');if(n==c){t.includes(x)&&(v=x);break}}${write}${colorScheme}};f();m.onchange=f}catch{}`
 }
+
+// Only themes with `light` or `dark` set `color-scheme`, so other themes, like contrast, can sit beside them.
+const setsColorScheme = (themes: ReadonlyArray<string>) =>
+  themes.includes('light') || themes.includes('dark')
