@@ -158,6 +158,21 @@ describe('subscribe', () => {
     assert.equal(a.mock.callCount(), 0)
     assert.equal(b.mock.callCount(), 1)
   })
+
+  test('stops listening to other tabs after the last unsubscribe', () => {
+    const theme = createTheme()
+    const unsubscribeA = theme.subscribe(() => {})
+    const unsubscribeB = theme.subscribe(() => {})
+    unsubscribeA()
+    unsubscribeA() // calling twice is harmless
+    document.cookie = 'theme=dark;path=/'
+    show()
+    assert.equal(theme.get(), 'dark')
+    unsubscribeB()
+    document.cookie = 'theme=light;path=/'
+    show()
+    assert.equal(theme.get(), 'dark')
+  })
 })
 
 describe('themeScript', () => {

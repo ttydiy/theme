@@ -61,6 +61,7 @@ export function createTheme({
 
   const listeners = new Set<(theme: string) => void>()
   let choice: string | undefined
+  let sync: AbortController | undefined
 
   // `document.cookie` throws in sandboxed iframes.
   const readCookie = () => {
@@ -101,13 +102,17 @@ export function createTheme({
       get() // The baseline other tabs are compared against.
       if (!listeners.size) {
         // Other tabs' changes arrive through `cookieStore` where it exists, otherwise when this tab is shown again.
+        const options = { signal: (sync = new AbortController()).signal }
         const store = (globalThis as { cookieStore?: EventTarget }).cookieStore
-        store?.addEventListener('change', resync)
-        addEventListener('visibilitychange', resync)
-        addEventListener('pageshow', resync)
+        store?.addEventListener('change', resync, options)
+        addEventListener('visibilitychange', resync, options)
+        addEventListener('pageshow', resync, options)
       }
       listeners.add(listener)
-      return () => listeners.delete(listener)
+      return () => {
+        listeners.delete(listener)
+        if (!listeners.size) sync?.abort()
+      }
     },
     parse,
     dehydrate: (cookies) => ({ [cookie]: parse(cookies) }),
