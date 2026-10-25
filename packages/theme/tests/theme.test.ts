@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, mock, test } from 'node:test'
-import { createTheme, themeScript, type Theme } from '@ttydiy/theme'
+import {
+  createTheme,
+  themeScript,
+  type Theme,
+  type ThemeOptions,
+} from '@ttydiy/theme'
 
 const root = document.documentElement
 const show = () =>
@@ -18,6 +23,7 @@ afterEach(() => {
   root.removeAttribute('class')
   root.removeAttribute('style')
   document.cookie = 'theme=;path=/;max-age=0'
+  document.cookie = 'mode=;path=/;max-age=0'
 })
 
 // Shared by `parse` and `themeScript`, which must agree.
@@ -176,8 +182,13 @@ describe('subscribe', () => {
 })
 
 describe('themeScript', () => {
-  const run = (theme: Pick<Theme<string>, 'options'>, cookie: string) => {
+  const run = (
+    theme: Pick<Theme<string>, 'options'>,
+    cookie: string,
+    className?: string,
+  ) => {
     const html = document.createElement('html')
+    if (className) html.className = className
     new Function('document', themeScript(theme))({
       cookie,
       documentElement: html,
@@ -209,6 +220,32 @@ describe('themeScript', () => {
     assert.equal(html.getAttribute('data-theme'), 'sepia')
     assert.equal(html.style.colorScheme, '')
   })
+
+  for (const [name, options, cookie] of [
+    ['a saved theme', {}, 'theme=dark'],
+    ["'system'", {}, ''],
+    ['class mode', { attribute: 'class' }, 'theme=dark'],
+    ['custom themes', { themes: ['light', 'sepia'] }, 'theme=sepia'],
+    ['a custom cookie', { cookie: 'mode' }, 'mode=dark'],
+  ] as const satisfies ReadonlyArray<
+    readonly [string, ThemeOptions<string>, string]
+  >) {
+    test(`shows what the store shows for ${name}`, () => {
+      os('dark')
+      if (cookie) document.cookie = `${cookie};path=/`
+      root.className = 'app'
+      const theme = createTheme(options)
+      theme.set(theme.get())
+      const html = run(theme, cookie, 'app')
+      const attributes = (element: Element) =>
+        Object.fromEntries(
+          element
+            .getAttributeNames()
+            .map((attribute) => [attribute, element.getAttribute(attribute)]),
+        )
+      assert.deepEqual(attributes(html), attributes(root))
+    })
+  }
 
   test('escapes </script> in options', () => {
     assert.doesNotMatch(
