@@ -24,3 +24,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build -w examples/nextjs -w examples/react -w examples/tanstack-start
+      - name: Test with React 18
+        run: |
+          npm i --no-save react@18 react-dom@18
+          npm run test:lib

@@ -34,5 +34,5 @@ export function ThemeHydrationBoundary({
   state,
   children,
 }: ThemeHydrationBoundaryProps): ReactNode {
-  return createElement(HydrationContext, { value: state }, children)
+  return createElement(HydrationContext.Provider, { value: state }, children)
 }
