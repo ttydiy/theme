@@ -1,6 +1,6 @@
 # @ttydiy/theme
 
-Headless, framework-agnostic theme state: the choice in a cookie, the resolved theme on `<html>`. No flash, SSR-ready, under 1 kB.
+Headless, framework-agnostic theme state: the choice in a cookie, the resolved theme on `<html>`. No flash, SSR-ready.
 
 - **Cookie-first.** The choice lives in a cookie, so the server can render it and every tab shares it.
 - **Set before the first paint.** A tiny inline script sets `<html>` from the visitor's cookie, even on static or cached pages.
