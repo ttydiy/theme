@@ -2,15 +2,22 @@
 
 Headless, framework-agnostic theme state: the choice in a cookie, the resolved theme on `<html>`. No flash, SSR-ready, under 1 kB.
 
-For React, install [@ttydiy/react-theme](https://www.npmjs.com/package/@ttydiy/react-theme) instead. It includes the core.
+- **Cookie-first.** The choice lives in a cookie, so the server can render it and every tab shares it.
+- **Set before the first paint.** A tiny inline script sets `<html>` from the visitor's cookie, even on static or cached pages.
+- **One store, any framework.** `get`, `set` and `subscribe`.
+- **More than light and dark.** Add independent themes, like contrast or density, side by side.
+
+Using React? Install [@ttydiy/react-theme](https://www.npmjs.com/package/@ttydiy/react-theme) instead. It includes this package.
+
+## Get started
+
+### 1. Install
 
 ```sh
 npm i @ttydiy/theme
 ```
 
-## Setup
-
-Create a theme:
+### 2. Create a theme
 
 ```ts
 // theme.ts
@@ -19,7 +26,21 @@ import { createTheme } from '@ttydiy/theme'
 export const colorTheme = createTheme()
 ```
 
-Inline the script first in `<head>`, so the theme is applied before the first paint:
+Every option is optional, so pass only what you want to change. The main ones, at their defaults:
+
+```ts
+export const colorTheme = createTheme({
+  themes: ['light', 'dark'], // plus 'system', which follows the OS
+  attribute: 'data-theme', // or 'class', for class="dark"
+  cookie: 'theme',
+})
+```
+
+All options are in the [API](#createthemeoptions).
+
+### 3. Add the script
+
+It sets the theme on `<html>` before the page paints. Put it first in `<head>`:
 
 ```ts
 import { themeScript } from '@ttydiy/theme'
@@ -27,14 +48,16 @@ import { themeScript } from '@ttydiy/theme'
 const head = `<script>${themeScript(colorTheme)}</script>`
 ```
 
-Style the themes:
+### 4. Style your themes
 
 ```css
-:root { background: #fff; }
-[data-theme='dark'] { background: #0a0a0a; }
+:root { background: #fff; color: #0a0a0a; }
+[data-theme='dark'] { background: #0a0a0a; color: #fafafa; }
 ```
 
-Read and change the theme:
+Using Tailwind, shadcn/ui or another CSS library? See [Styling](https://github.com/ttydiy/theme#styling).
+
+### 5. Read and change the theme
 
 ```ts
 colorTheme.get() // 'light' | 'dark' | 'system'
@@ -42,7 +65,7 @@ colorTheme.set('dark')
 colorTheme.subscribe((theme) => {})
 ```
 
-Read the choice on the server:
+On the server:
 
 ```ts
 colorTheme.parse(request.headers.get('cookie'))
@@ -63,12 +86,12 @@ colorTheme.parse(request.headers.get('cookie'))
 |---|---|
 | `get()` | The choice: a theme or `'system'` |
 | `set(theme)` | Takes a theme, `'system'` or an updater |
-| `subscribe(listener)` | Returns `unsubscribe`. Fires for other tabs too. |
-| `parse(cookieHeader)` | The choice, on the server |
-| `dehydrate(cookieHeader)` | State for a framework's hydration boundary |
+| `subscribe(listener)` | Calls `listener` on every change, including from other tabs. Returns `unsubscribe`. |
+| `parse(cookieHeader)` | Reads the choice from a `Cookie` header, on the server |
+| `dehydrate(cookieHeader)` | The choice as state for a framework's hydration boundary |
 
 ### `themeScript(theme)`
 
-The inline script, as a string. Its output is fixed per config, so a strict CSP can allow it by hash.
+The script, as a string. Its output only changes with the options, so a strict Content Security Policy can allow it by hash.
 
 [Docs](https://github.com/ttydiy/theme) · MIT

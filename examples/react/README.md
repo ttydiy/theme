@@ -1,6 +1,6 @@
 # React with Vite
 
-Client-only: a Vite plugin inlines the theme script into `index.html`.
+A single-page app. A Vite plugin puts the script into `index.html`.
 
 ```sh
 # from the repo root
@@ -11,9 +11,9 @@ npm run dev -w examples/react
 
 ## Setup
 
-1. Install the package: `npm i @ttydiy/react-theme`
+1. Install: `npm i @ttydiy/react-theme`
 
-2. Create the theme in [`src/theme.ts`](src/theme.ts):
+2. Create a theme in [`src/theme.ts`](src/theme.ts):
 
    ```ts
    import { createTheme } from '@ttydiy/react-theme'
@@ -21,7 +21,7 @@ npm run dev -w examples/react
    export const colorTheme = createTheme()
    ```
 
-3. In [`vite.config.ts`](vite.config.ts), inline the script first in `<head>`:
+3. Add the script first in `<head>`, in [`vite.config.ts`](vite.config.ts):
 
    ```ts
    plugins: [
@@ -35,15 +35,15 @@ npm run dev -w examples/react
    ],
    ```
 
-4. Read and set the theme in a component, like [`src/App.tsx`](src/App.tsx):
-
-   ```tsx
-   const [theme, setTheme] = useTheme(colorTheme)
-   ```
-
-5. Style the themes in [`src/index.css`](src/index.css):
+4. Style your themes in [`src/index.css`](src/index.css):
 
    ```css
    :root { background: #fff; color: #0a0a0a; }
    [data-theme='dark'] { background: #0a0a0a; color: #fafafa; }
+   ```
+
+5. Add a toggle, like [`src/App.tsx`](src/App.tsx):
+
+   ```tsx
+   const [theme, setTheme] = useTheme(colorTheme)
    ```
