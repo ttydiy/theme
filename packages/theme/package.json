@@ -1,6 +1,6 @@
 {
   "name": "@ttydiy/theme",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Headless, framework-agnostic theme state: the choice in a cookie, the resolved theme on <html>.",
   "keywords": [
     "theme",
