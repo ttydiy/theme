@@ -70,7 +70,9 @@ test('re-renders on set and on changes from other tabs', async () => {
   assert.equal(container.textContent, 'sepia')
   await act(() => {
     document.cookie = 'theme=light;path=/' // written by another tab
-    document.dispatchEvent(new Event('visibilitychange', { bubbles: true }))
+    ;(
+      globalThis as unknown as { cookieStore: EventTarget }
+    ).cookieStore.dispatchEvent(new Event('change'))
   })
   assert.equal(container.textContent, 'light')
 })

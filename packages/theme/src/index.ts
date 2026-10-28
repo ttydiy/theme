@@ -22,7 +22,7 @@ export interface Theme<TTheme extends string> {
   subscribe: (listener: (theme: TTheme | 'system') => void) => () => void
   /** The choice in a `Cookie` header or `document.cookie`. */
   parse: (cookies?: string | null) => TTheme | 'system'
-  /** The request's choice, for `ThemeHydrationBoundary`. */
+  /** The request's choice, for a framework's hydration boundary. */
   dehydrate: (cookies?: string | null) => Record<string, TTheme | 'system'>
 }
 
@@ -107,11 +107,10 @@ export function createTheme({
     subscribe(listener) {
       get() // The baseline other tabs are compared against.
       if (!listeners.size) {
-        // Other tabs' changes arrive through `cookieStore` where it exists, otherwise when this tab is shown again.
+        // Other tabs' changes arrive through `cookieStore`. A page restored from the back/forward cache missed them, so it rechecks.
         const options = { signal: (sync = new AbortController()).signal }
         const store = (globalThis as { cookieStore?: EventTarget }).cookieStore
         store?.addEventListener('change', resync, options)
-        addEventListener('visibilitychange', resync, options)
         addEventListener('pageshow', resync, options)
       }
       listeners.add(listener)

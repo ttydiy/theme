@@ -183,7 +183,7 @@ One cookie holds the user's choice, and everything reads from it:
 - **`'system'` resolved in the browser.** It follows `prefers-color-scheme`, and updates live when the OS changes.
 - **A framework-agnostic store.** `get`, `set` and `subscribe`, the contract React's `useSyncExternalStore` expects, so each framework adapter is a few lines.
 - **Hydration without mismatches.** The server passes the request's choice to the client, so both render the same value.
-- **Tabs in sync.** Through the `cookieStore` change event, or when a tab is shown again where that's unsupported.
+- **Tabs in sync.** Through the `cookieStore` change event. A page restored from the back/forward cache rechecks the cookie.
 
 ## Styling
 

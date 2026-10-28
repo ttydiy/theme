@@ -8,8 +8,11 @@ import {
 } from '@ttydiy/theme'
 
 const root = document.documentElement
-const show = () =>
-  document.dispatchEvent(new Event('visibilitychange', { bubbles: true }))
+// Another tab changed the cookie: browsers report it through `cookieStore`.
+const otherTab = () =>
+  (
+    globalThis as unknown as { cookieStore: EventTarget }
+  ).cookieStore.dispatchEvent(new Event('change'))
 const os = (scheme: 'light' | 'dark') => {
   const { happyDOM } = globalThis as unknown as {
     happyDOM: { settings: { device: { prefersColorScheme: string } } }
@@ -166,7 +169,7 @@ describe('subscribe', () => {
   })
 
   for (const [when, event] of [
-    ['the tab is shown again', show],
+    ['the cookie changes', otherTab],
     [
       'restored from the back/forward cache',
       () => dispatchEvent(new Event('pageshow')),
@@ -184,11 +187,11 @@ describe('subscribe', () => {
     })
   }
 
-  test('ignores tab shows without a change', () => {
+  test('ignores cookie events without a change', () => {
     const theme = createTheme()
     const listener = mock.fn()
     theme.subscribe(listener)
-    show()
+    otherTab()
     assert.equal(listener.mock.callCount(), 0)
   })
 
@@ -211,11 +214,11 @@ describe('subscribe', () => {
     unsubscribeA()
     unsubscribeA() // calling twice is harmless
     document.cookie = 'theme=dark;path=/'
-    show()
+    otherTab()
     assert.equal(theme.get(), 'dark')
     unsubscribeB()
     document.cookie = 'theme=light;path=/'
-    show()
+    otherTab()
     assert.equal(theme.get(), 'dark')
   })
 })
