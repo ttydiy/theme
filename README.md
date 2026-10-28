@@ -39,7 +39,7 @@ All options are in the [API](#createthemeoptions).
 
 ### 3. Add the script
 
-It sets the theme on `<html>` before the page paints. Put it first in `<head>`.
+It renders the theme on `<html>` before the page paints, and again on every change. Put it first in `<head>` on every page.
 
 <details open>
 <summary><b>Next.js</b></summary>
@@ -174,12 +174,12 @@ One cookie holds the user's choice, and everything reads from it:
                         │
                         ├──► other tabs
                         ▼
- the script, before the first paint ──► <html data-theme="dark" style="color-scheme: dark"> ──► your CSS
+ the script, on the first paint and every change ──► <html data-theme="dark" style="color-scheme: dark"> ──► your CSS
 ```
 
 - **Cookie as the source of truth.** Most theme libraries use `localStorage`, which only the browser can read. A cookie also reaches the server, so the server, the script and every tab agree.
-- **Script before the first paint.** A small blocking script in `<head>` applies the choice, so there's no flash of the wrong theme.
-- **`<html>` as output only.** The library writes the theme and `color-scheme` there, and never reads them back.
+- **One renderer.** A small blocking script in `<head>` renders the choice before the first paint, so there's no flash of the wrong theme. It also renders every later change: the store saves the choice and asks the script to show it.
+- **`<html>` as output only.** The script writes the theme and `color-scheme` there, and nothing reads them back.
 - **`'system'` resolved in the browser.** It follows `prefers-color-scheme`, and updates live when the OS changes.
 - **A framework-agnostic store.** `get`, `set` and `subscribe`, the contract React's `useSyncExternalStore` expects, so each framework adapter is a few lines.
 - **Hydration without mismatches.** The server passes the request's choice to the client, so both render the same value.
@@ -286,7 +286,7 @@ Add a script for each, and pass both to the boundary:
 
 ### `themeScript(theme)`
 
-The script, as a string. Its output only changes with the options, so a strict Content Security Policy can allow it by hash.
+The script, as a string. Every page needs it: it renders the first paint and every change after. Without it, `set` still saves the choice, but `<html>` doesn't change. Its output only changes with the options, so a strict Content Security Policy can allow it by hash.
 
 ### `useTheme(theme)`
 

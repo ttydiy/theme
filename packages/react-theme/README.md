@@ -39,7 +39,7 @@ All options are in the [API](https://github.com/ttydiy/theme#createthemeoptions)
 
 ### 3. Add the script
 
-It sets the theme on `<html>` before the page paints. Put it first in `<head>`. In Next.js:
+It renders the theme on `<html>` before the page paints, and again on every change. Put it first in `<head>` on every page. In Next.js:
 
 ```tsx
 // app/layout.tsx

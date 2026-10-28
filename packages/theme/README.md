@@ -40,7 +40,7 @@ All options are in the [API](#createthemeoptions).
 
 ### 3. Add the script
 
-It sets the theme on `<html>` before the page paints. Put it first in `<head>`:
+It renders the theme on `<html>` before the page paints, and again on every change. Put it first in `<head>` on every page:
 
 ```ts
 import { themeScript } from '@ttydiy/theme'
@@ -92,6 +92,6 @@ colorTheme.parse(request.headers.get('cookie'))
 
 ### `themeScript(theme)`
 
-The script, as a string. Its output only changes with the options, so a strict Content Security Policy can allow it by hash.
+The script, as a string. Every page needs it: it renders the first paint and every change after. Without it, `set` still saves the choice, but `<html>` doesn't change. Its output only changes with the options, so a strict Content Security Policy can allow it by hash.
 
 [Docs](https://github.com/ttydiy/theme) · MIT

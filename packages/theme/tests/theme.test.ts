@@ -20,13 +20,22 @@ const os = (scheme: 'light' | 'dark') => {
   happyDOM.settings.device.prefersColorScheme = scheme
 }
 
+// Pages run the script, which renders every change, so the tests do too.
+const create = <const TTheme extends string = 'light' | 'dark'>(
+  options?: ThemeOptions<TTheme>,
+) => {
+  const theme = createTheme(options)
+  new Function(themeScript(theme))()
+  return theme
+}
+
 afterEach(() => {
   os('light')
   root.removeAttribute('data-theme')
   root.removeAttribute('data-contrast')
   root.removeAttribute('class')
   root.removeAttribute('style')
-  for (const name of ['theme', 'mode', 'contrast'])
+  for (const name of ['theme', 'mode', 'contrast', 'unscripted'])
     document.cookie = `${name}=;path=/;max-age=0`
 })
 
@@ -66,11 +75,11 @@ describe('parse', () => {
 describe('get / set', () => {
   test('get reads the cookie', () => {
     document.cookie = 'theme=dark;path=/'
-    assert.equal(createTheme().get(), 'dark')
+    assert.equal(create().get(), 'dark')
   })
 
   test('set saves the choice and shows it on <html>', () => {
-    const theme = createTheme()
+    const theme = create()
     theme.set('dark')
     assert.equal(theme.get(), 'dark')
     assert.equal(theme.parse(document.cookie), 'dark')
@@ -80,7 +89,7 @@ describe('get / set', () => {
 
   test("'system' clears the cookie and shows the OS theme", () => {
     os('dark')
-    const theme = createTheme()
+    const theme = create()
     theme.set('light')
     theme.set('system')
     assert.equal(theme.get(), 'system')
@@ -90,14 +99,14 @@ describe('get / set', () => {
   })
 
   test('set takes an updater', () => {
-    const theme = createTheme()
+    const theme = create()
     theme.set('light')
     theme.set((current) => (current === 'dark' ? 'light' : 'dark'))
     assert.equal(theme.get(), 'dark')
   })
 
   test('class mode swaps the theme class, keeping others', () => {
-    const theme = createTheme({ attribute: 'class' })
+    const theme = create({ attribute: 'class' })
     root.classList.add('app')
     theme.set('dark')
     assert.equal(root.className, 'app dark')
@@ -106,7 +115,7 @@ describe('get / set', () => {
   })
 
   test('custom themes leave color-scheme to CSS', () => {
-    const theme = createTheme({ themes: ['light', 'dark', 'sepia'] })
+    const theme = create({ themes: ['light', 'dark', 'sepia'] })
     theme.set('dark')
     theme.set('sepia')
     assert.equal(root.getAttribute('data-theme'), 'sepia')
@@ -114,7 +123,7 @@ describe('get / set', () => {
   })
 
   test('custom attribute and cookie', () => {
-    const theme = createTheme({ attribute: 'data-mode', cookie: 'mode' })
+    const theme = create({ attribute: 'data-mode', cookie: 'mode' })
     theme.set('light')
     assert.equal(root.getAttribute('data-mode'), 'light')
     assert.equal(theme.parse(document.cookie), 'light')
@@ -122,17 +131,43 @@ describe('get / set', () => {
     root.removeAttribute('data-mode')
   })
 
+  test('renders even when cookies are blocked, as in sandboxed iframes', () => {
+    const theme = create()
+    const blocked = () => {
+      throw new DOMException('blocked')
+    }
+    Object.defineProperty(document, 'cookie', {
+      get: blocked,
+      set: blocked,
+      configurable: true,
+    })
+    try {
+      theme.set('dark')
+    } finally {
+      delete (document as { cookie?: string }).cookie // back to the real cookie
+    }
+    assert.equal(root.getAttribute('data-theme'), 'dark')
+  })
+
+  test('without the script, set still saves the choice', () => {
+    const theme = createTheme({ cookie: 'unscripted' })
+    theme.set('dark')
+    assert.equal(theme.get(), 'dark')
+    assert.equal(theme.parse(document.cookie), 'dark')
+    assert.equal(root.hasAttribute('data-theme'), false)
+  })
+
   test("'system' shows no theme when the OS's isn't one of them", () => {
     os('dark')
-    createTheme({ themes: ['light', 'sepia'] }).set('system')
+    create({ themes: ['light', 'sepia'] }).set('system')
     assert.equal(root.hasAttribute('data-theme'), false)
     assert.equal(root.style.colorScheme, '')
   })
 
   test('several themes stay independent', () => {
     os('dark')
-    const color = createTheme()
-    const contrast = createTheme(contrastOptions)
+    const color = create()
+    const contrast = create(contrastOptions)
     color.set('system')
     contrast.set('more')
     assert.equal(root.getAttribute('data-theme'), 'dark')
@@ -144,8 +179,8 @@ describe('get / set', () => {
   })
 
   test('several themes can share the class attribute', () => {
-    const color = createTheme({ attribute: 'class' })
-    const contrast = createTheme({ ...contrastOptions, attribute: 'class' })
+    const color = create({ attribute: 'class' })
+    const contrast = create({ ...contrastOptions, attribute: 'class' })
     color.set('dark')
     contrast.set('more')
     contrast.set('less')
@@ -156,7 +191,7 @@ describe('get / set', () => {
 
 describe('subscribe', () => {
   test('notifies on set until unsubscribed', () => {
-    const theme = createTheme()
+    const theme = create()
     const listener = mock.fn()
     const unsubscribe = theme.subscribe(listener)
     theme.set('dark')
@@ -176,7 +211,7 @@ describe('subscribe', () => {
     ],
   ] as const) {
     test(`applies changes from other tabs when ${when}`, () => {
-      const theme = createTheme()
+      const theme = create()
       const listener = mock.fn()
       theme.subscribe(listener)
       document.cookie = 'theme=dark;path=/' // written by another tab
@@ -188,7 +223,7 @@ describe('subscribe', () => {
   }
 
   test('ignores cookie events without a change', () => {
-    const theme = createTheme()
+    const theme = create()
     const listener = mock.fn()
     theme.subscribe(listener)
     otherTab()
@@ -196,7 +231,7 @@ describe('subscribe', () => {
   })
 
   test('each unsubscribe stops only its own listener', () => {
-    const theme = createTheme()
+    const theme = create()
     const a = mock.fn()
     const b = mock.fn()
     const unsubscribeA = theme.subscribe(a)
@@ -208,7 +243,7 @@ describe('subscribe', () => {
   })
 
   test('stops listening to other tabs after the last unsubscribe', () => {
-    const theme = createTheme()
+    const theme = create()
     const unsubscribeA = theme.subscribe(() => {})
     const unsubscribeB = theme.subscribe(() => {})
     unsubscribeA()
@@ -247,22 +282,6 @@ describe('themeScript', () => {
     })
   }
 
-  test("resolves 'system' from the OS", () => {
-    os('dark')
-    assert.equal(run(createTheme(), '').getAttribute('data-theme'), 'dark')
-  })
-
-  test('class mode', () => {
-    const html = run(createTheme({ attribute: 'class' }), 'theme=dark')
-    assert.equal(html.className, 'dark')
-  })
-
-  test('custom themes leave color-scheme to CSS', () => {
-    const html = run(createTheme({ themes: ['light', 'sepia'] }), 'theme=sepia')
-    assert.equal(html.getAttribute('data-theme'), 'sepia')
-    assert.equal(html.style.colorScheme, '')
-  })
-
   for (const [name, options, cookie] of [
     ['a saved theme', {}, 'theme=dark'],
     ["'system'", {}, ''],
@@ -279,7 +298,7 @@ describe('themeScript', () => {
       os('dark')
       if (cookie) document.cookie = `${cookie};path=/`
       root.className = 'app'
-      const theme = createTheme(options)
+      const theme = create(options)
       theme.set(theme.get())
       const html = run(theme, cookie, 'app')
       const attributes = (element: Element) =>

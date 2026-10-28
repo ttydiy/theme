@@ -13,7 +13,7 @@ export interface Theme<TTheme extends string> {
   readonly options: Required<ThemeOptions<TTheme>>
   /** The user's choice. `<html>` shows it resolved: `'system'` becomes the OS's `'light'` or `'dark'`, or none if that isn't one of `themes`. */
   get: () => TTheme | 'system'
-  /** Saves the choice to the cookie and shows it, resolved, on `<html>`. */
+  /** Saves the choice to the cookie, and has `themeScript` show it, resolved, on `<html>`. */
   set: (
     value:
       TTheme | 'system' | ((theme: TTheme | 'system') => TTheme | 'system'),
@@ -44,26 +44,11 @@ export function createTheme({
     return 'system'
   }
 
-  // The OS's theme, if it's one of `themes`. It and `apply` are mirrored by `themeScript`; the tests keep them in sync.
-  const systemTheme = () => {
-    const theme = matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light'
-    return themes.includes(theme) ? theme : undefined
-  }
-
-  const apply = (theme: string) => {
-    const root = document.documentElement
-    const resolved = theme === 'system' ? systemTheme() : theme
-    if (attribute === 'class') {
-      root.classList.remove(...themes)
-      if (resolved) root.classList.add(resolved)
-    } else if (resolved) root.setAttribute(attribute, resolved)
-    else root.removeAttribute(attribute)
-    if (setsColorScheme(themes))
-      root.style.colorScheme =
-        resolved === 'dark' || resolved === 'light' ? resolved : ''
-  }
+  // `themeScript` renders on `<html>`. Without it, the choice is still saved.
+  const render = (theme: string) =>
+    (globalThis as unknown as Record<string, (theme: string) => void>)[
+      `ttydiy:${cookie}`
+    ]?.(theme)
 
   const listeners = new Set<(theme: string) => void>()
   let choice: string | undefined
@@ -82,7 +67,7 @@ export function createTheme({
 
   const update = (theme: string) => {
     choice = theme
-    apply(theme)
+    render(theme)
     for (const listener of listeners) listener(theme)
   }
 
@@ -124,7 +109,7 @@ export function createTheme({
   }
 }
 
-/** Inline first in `<head>`. Applies the saved choice to `<html>` before the first paint, and follows the OS while it's `'system'`. */
+/** Inline first in `<head>`. Renders the saved choice on `<html>` before the first paint, then every change, and follows the OS while it's `'system'`. */
 export function themeScript({
   options: { themes, attribute, cookie },
 }: Pick<Theme<string>, 'options'>): string {
@@ -134,12 +119,13 @@ export function themeScript({
   )
   const write =
     attribute === 'class'
-      ? 'd.classList.remove(...t),v&&d.classList.add(v)'
+      ? 'for(let x of t)d.classList.toggle(x,x==v)'
       : 'v?d.setAttribute(a,v):d.removeAttribute(a)'
   const colorScheme = setsColorScheme(themes)
     ? ";d.style.colorScheme=v=='dark'||v=='light'?v:''"
     : ''
-  return `try{let[t,a,c]=${config},d=document.documentElement,m=matchMedia('(prefers-color-scheme: dark)'),f=()=>{let s=m.matches?'dark':'light',v=t.includes(s)?s:'';for(let p of document.cookie.split(';')){let[n,x]=p.trim().split('=');if(n==c){t.includes(x)&&(v=x);break}}${write}${colorScheme}};f();m.onchange=f}catch{}`
+  // `f` renders a choice, or the saved one. The store calls it through `window['ttydiy:' + cookie]`.
+  return `try{let[t,a,c]=${config},d=document.documentElement,m=matchMedia('(prefers-color-scheme: dark)'),f=o=>{let s=m.matches?'dark':'light',v=t.includes(s)?s:'';if(!o)for(let p of document.cookie.split(';')){let[n,x]=p.trim().split('=');if(n==c){o=x;break}}t.includes(o)&&(v=o);${write}${colorScheme}};f();m.onchange=()=>f();window['ttydiy:'+c]=f}catch{}`
 }
 
 // Only themes with `light` or `dark` set `color-scheme`, so other themes, like contrast, can sit beside them.
